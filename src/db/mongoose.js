@@ -2,27 +2,25 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 
 const newUrl = process.env.DB_URL + '/' + process.env.DB_NAME2;
-console.log(newUrl);
+console.log(`Connect to mongoDB ${newUrl}`);
 mongoose.connect(newUrl, {
     useCreateIndex: true,
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
 });
 
-const User = mongoose.model('User', {
-    name: {
-        type: String
+const Task = mongoose.model('Task', {
+    description: {
+        type: String,
+        required: true,
+        trim: true,
     },
-    age: {
-        type: Number
+    completed: {
+        type: Boolean
     }
 });
 
-const me = new User({
-    name: 'Dacheng',
-    age: 29
-});
-
-me.save().then(() => {
-    console.log(me);
-}).catch((error) => {
-    console.log('Error!' + error);
-});
+const task = new Task({
+    description: 'Complete the mongoose library',
+    completed: false,
+})
