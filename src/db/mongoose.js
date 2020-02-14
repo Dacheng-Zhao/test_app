@@ -8,19 +8,3 @@ mongoose.connect(newUrl, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 });
-
-const Task = mongoose.model('Task', {
-    description: {
-        type: String,
-        required: true,
-        trim: true,
-    },
-    completed: {
-        type: Boolean
-    }
-});
-
-const task = new Task({
-    description: 'Complete the mongoose library',
-    completed: false,
-})
