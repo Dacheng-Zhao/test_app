@@ -7,4 +7,5 @@ mongoose.connect(newUrl, {
     useCreateIndex: true,
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    useFindAndModify: false
 });
