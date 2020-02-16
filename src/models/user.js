@@ -1,6 +1,7 @@
-const validator =  require('validator');
+const validator = require('validator');
 const mongoose = require('mongoose');
 const bycrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -12,13 +13,14 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true,
+        unique: true,
         lowercase: true,
         validate(value) {
             if (!validator.isEmail(value)) {
                 throw new Error(`email format not correct`);
             }
         }
-    },  
+    },
     age: {
         type: Number,
         default: 999,
@@ -38,10 +40,38 @@ const userSchema = new mongoose.Schema({
                 throw new Error(`Password can not contain "password"`);
             }
         }
-    }
+    },
+    tokens: [
+        {
+            token:
+            {
+                type: String
+            }
+        }
+    ]
 })
 
-userSchema.pre('save', async function(next) {
+userSchema.methods.generateAuthToken = async function () {
+    const user = this;
+    const token = await jwt.sign({ _id: user._id.toString() }, 'secretKey');
+    user.tokens = user.tokens.concat({ token });
+    await user.save();
+    return token;
+}
+
+userSchema.statics.findByCredential = async (email, password) => {
+    const user = await User.findOne({ email });
+    if (!user) {
+        throw new Error(`Unable to login, user not exist`);
+    }
+    const isMatch = await bycrypt.compare(password, user.password);
+    if (!isMatch) {
+        throw new Error(`Password does not match`);
+    }
+    return user
+}
+
+userSchema.pre('save', async function (next) {
     const user = this;
     if (user.isModified('password')) {
         user.password = await bycrypt.hash(user.password, 8);
