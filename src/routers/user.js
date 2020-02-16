@@ -1,4 +1,5 @@
 const express = require('express');
+const auth = require('../middleware/auth');
 const router = new express.Router();
 const User = require('../models/user'); 
 
@@ -14,11 +15,38 @@ router.post('/users', async (req, res, next) => {
     // })
     try {
         await user.save();
-        res.status(201).send(user);
+        const token = await user.generateAuthToken();
+        res.status(201).send({ user, token });
     } catch (error) {
         res.status(500).send(error);
     }
 });
+
+router.get('/users/me', auth, async (req, res) => {
+    res.status(200).send(req.user);
+})
+
+router.post('/users/logout', auth, async (req, res) => {
+    try {
+        req.user.tokens = req.user.tokens.filter(token => {
+            token.token != req.token;
+        })
+        await req.user.save();
+        res.status(200).send(req.user);
+    } catch (error) {
+        res.status(500).send(error);
+    }
+});
+
+router.post('/users/logoutall', auth, async (req, res) => {
+    try {
+        req.user.tokens = [];
+        await req.user.save();
+        res.status(200).send(req.user);
+    } catch (error) {
+        res.status(500).send(error);
+    }
+})
 
 router.get('/users', (req, res) => {
     User.find({}).then((users) => {
@@ -74,6 +102,16 @@ router.delete('/users/:id', async (req, res) => {
     }
     catch (error) {
         res.status(500).send(error);
+    }
+})
+
+router.post('/user/login', async (req, res) => {
+    try {
+        const user = await User.findByCredential(req.body.email, req.body.password);
+        const token = await user.generateAuthToken();
+        res.status(200).send({ user, token });
+    } catch (error) {
+        res.status(400).send(error);
     }
 })
 
